@@ -1,0 +1,31 @@
+---
+title: "Updated Jello-Shot Analysis April 2022"
+author: "Jeff Brabec"
+date: "4/1/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(here)
+library(lubridate)
+library(readxl)
+
+#Load custom functions
+fun.dir <- list.files(here("src"), full.names = TRUE)
+for(i in 1:length(fun.dir)){source(fun.dir[i])}
+```
+
+# Calibration Slopes
+```{r}
+calibration_vals <- read_xlsx(here("data/Compiled Calibrations.xlsx"))
+```
+
+# Read in and process data
+```{r}
+
+huh <- get_jello_consumption(here("data/recordings"), calibrations = 0)
+```
+
