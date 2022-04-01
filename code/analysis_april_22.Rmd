@@ -24,7 +24,7 @@ calibration_vals <- read_xlsx(here("data/Compiled Calibrations.xlsx"))
 ```
 
 # Read in and process data
-```{r}
+```{r message=FALSE}
 
 huh <- get_jello_consumption(here("data/recordings"), calibrations = 0)
 ```

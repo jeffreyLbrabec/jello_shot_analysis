@@ -4,6 +4,12 @@ get_jello_consumption <- function(dir, calibrations) {
   
   date_dirs <- list.files(dir, full.names = TRUE)
   
-  map(date_dirs, dir_wrapper)
+  readings <- map(date_dirs, dir_wrapper)
+  
+  dir_names <- list.files(dir)
+  
+  names(readings) <- dir_names
+  
+  return(readings)
   
 }
