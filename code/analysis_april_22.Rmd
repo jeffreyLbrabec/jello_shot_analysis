@@ -12,6 +12,9 @@ library(tidyverse)
 library(here)
 library(lubridate)
 library(readxl)
+library(future)
+library(furrr)
+library(doParallel)
 
 #Load custom functions
 fun.dir <- list.files(here("src"), full.names = TRUE)
@@ -26,7 +29,7 @@ calibration_vals <- read_xlsx(here("data/Compiled Calibrations.xlsx"))
 # Read in and process data
 ```{r message=FALSE}
 
-huh <- get_jello_consumption(here("data/recordings"), 
-                             calibrations = calibration_vals)
+jello_pred_data <- get_jello_consumption(dir = here("data/recordings"), 
+                                         calibrations = calibration_vals)
 ```
 
