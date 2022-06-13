@@ -30,21 +30,30 @@ calibration_vals <- read_xlsx(here("data/Compiled Calibrations.xlsx"))
 ```{r message=FALSE}
 
 jello_pred_data <- get_jello_consumption(dir = here("data/recordings"), 
-                                         calibrations = calibration_vals)
+                                         calibrations = calibration_vals,
+                                         results_dir = here("results/march_preds"))
+
+april_pred_data <- get_jello_consumption(dir = here("data/4-2022"),
+                                         calibrations = calibration_vals,
+                                         results_dir = here("results/april_preds"))
+
+may_pred_data <- get_jello_consumption(dir = here("data/5-2022"),
+                                       calibrations = calibration_vals,
+                                       results_dir = here("results/may_preds"))
 ```
 
 # Bin and Convert
 ```{r}
 
-get_binned_data(dir = here("results/pred_readings"),
-                bin = "15 mins", 
-                time_increment = "time_m",
-                results_dir = here("results/fifteen_min_bins"))
-
-get_binned_data(dir = here("results/pred_readings"),
+get_binned_data(dir = here("results/april_preds"),
                 bin = "30 mins", 
                 time_increment = "time_m",
-                results_dir = here("results/thirty_min_bins"))
+                results_dir = here("results/april_30_bins"))
+
+get_binned_data(dir = here("results/may_preds"),
+                bin = "30 mins", 
+                time_increment = "time_m",
+                results_dir = here("results/may_30_bins"))
 
 get_binned_data(dir = here("results/pred_readings"),
                 bin = "60 mins", 

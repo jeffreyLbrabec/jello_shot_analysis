@@ -23,7 +23,7 @@ dir_wrapper <- function(dir, dir_name, calibrations = NULL, binned = FALSE, resu
       select(files, mouse_id, slope)
     
     plan(multisession)
-    readings <- future_pmap(data_files, possibly(read_wrapper, NULL), dir_name)
+    readings <- future_pmap(data_files, possibly(read_wrapper, NA_real_), dir_name, results_dir)
     
     names(readings) <- data_files$mouse_id
     

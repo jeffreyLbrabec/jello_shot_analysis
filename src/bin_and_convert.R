@@ -15,6 +15,7 @@ bin_and_convert <- function(data = NULL,
   # Set custom time bin and calculate weight as mean for that time window ------------------
   binned_data <- data %>% 
     select(time, pred_weight) %>% 
+    mutate(time = parse_date_time(time, "ymd HMS")) %>% 
     mutate(binned_time = cut(data$time, breaks = {{ bin }})) %>% 
     group_by(binned_time) %>% 
     summarize(mean_weight = mean(pred_weight)) %>% 
