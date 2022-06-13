@@ -10,7 +10,7 @@ get_binned_data <- function(dir, bin, time_increment, results_dir) {
   
   date_bins <- map2(date_dirs, 
                     date_dir_names, 
-                    dir_wrapper, 
+                    possibly(dir_wrapper, NA_real_), 
                     bin = bin, 
                     time_increment = time_increment, 
                     results_dir = results_dir, 
