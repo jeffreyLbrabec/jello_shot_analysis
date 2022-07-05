@@ -1,0 +1,283 @@
+---
+title: "Best files"
+output: html_document
+date: '2022-06-29'
+---
+```{r}
+library(tidyverse)
+library(here)
+library(lubridate)
+library(readxl)
+library(future)
+library(furrr)
+library(doParallel)
+
+#Load custom functions
+fun.dir <- list.files(here("src"), full.names = TRUE)
+for(i in 1:length(fun.dir)){source(fun.dir[i])}
+```
+
+# Calibration Slopes
+```{r}
+calibration_vals <- read_xlsx(here("data/Compiled Calibrations.xlsx"))
+```
+
+```{r}
+
+quick_smooth <- function(file, slope, filt_vals, mouse_id, date, span, bin, time_increment, results_dir) {
+  
+  reading_file <- read_csv(file, show_col_types = FALSE)
+  
+  processed_reading <- reading_file %>%
+    janitor::clean_names() %>% 
+    drop_na() %>% 
+    #filter(reading != reading_file$reading[1]) %>% 
+    mutate(time = parse_date_time(time, "ymd HMS")) %>%
+    mutate(across(reading, as.numeric))
+  
+  calculated_weights <- calculate_weights(data = processed_reading,
+                                          slope_val = slope) %>% 
+    filter(measured_weight < filt_vals) %>% 
+    mutate(time_s = row_number())
+  
+  smoothed_data <- smooth_data(data = calculated_weights,
+                               span_val = span) 
+  
+  write_csv(smoothed_data$data, paste(results_dir, date, paste0(mouse_id, "_smoothed.csv"), sep = "/"))
+  ggsave(filename = paste(results_dir, date, paste0(mouse_id, "_smoothed.png"), sep = "/"),
+         plot = smoothed_data$plot)
+  
+  binned_data <- smoothed_data$data %>% 
+    select(time_s, pred_weight) %>% 
+    #mutate(time = parse_date_time(time, "ymd HMS")) %>% 
+    mutate(binned_time = cut(smoothed_data$data$time, breaks = {{ bin }})) %>% 
+    group_by(binned_time) %>% 
+    summarize(mean_weight = mean(pred_weight)) %>% 
+    ungroup() %>% 
+    as.data.frame() %>% #added to stop R from rounding when doing mean(weight)
+    mutate(
+      binned_time = parse_date_time(binned_time, "ymd HMS"),
+      !!{{ time_increment }} := seq(from = 0, 
+                                    to = (length(.$mean_weight)-1) * as.numeric(difftime(.$binned_time[2], 
+                                                                                         .$binned_time[1])), 
+                                    by = as.numeric(difftime(.$binned_time[2], 
+                                                             .$binned_time[1])))
+    )
+  
+  # Convert time to hours ---------------------------------------------------
+  time_col <- colnames(binned_data)[3]
+  time_unit <- str_sub(time_col, start = -1)
+  
+  if(time_unit == "s") {
+    
+    trimmed_data_to_h <- binned_data %>% 
+      mutate(time_h = `$`(binned_data, !!time_increment) / 60 / 60)
+    
+  }else if(time_unit == "m") {
+    
+    trimmed_data_to_h <- binned_data %>% 
+      mutate(time_h = `$`(binned_data, !!time_increment) / 60)
+    
+  }else if(time_unit == "h") {
+    
+    trimmed_data_to_h <- binned_data
+    
+  }
+  
+  
+  final_data <- trimmed_data_to_h %>% mutate(cum_consump = .$mean_weight[1] - .$mean_weight)
+  write_csv(final_data, paste(results_dir, date, paste0(mouse_id, "_binned.csv"), sep = "/"))
+  
+  
+}
+
+```
+
+
+March 18
+```{r}
+
+#M1
+quick_smooth(file = here("data/3-2022/3-18-2022/M1_OXY.CSV"), 
+             slope = 12239, 
+             filt_val = 100, 
+             span = 0.7, 
+             bin = "30 mins", 
+             time_increment = "time_m", 
+             mouse_id = "M1_OXY", 
+             results_dir = here("results/best_data/3.18"))
+
+#M2
+quick_smooth(file = here("data/3-2022/3-18-2022/M2_OXY.CSV"), 
+             slope = 13589, 
+             filt_val = 25, 
+             span = 0.7, 
+             bin = "30 mins", 
+             time_increment = "time_m", 
+             mouse_id = "M2_OXY", 
+             results_dir = here("results/best_data/3.18"))
+
+#M3
+quick_smooth(file = here("data/3-2022/3-18-2022/M3OXY.CSV"), 
+             slope = 18345, 
+             filt_val = 30, 
+             span = 0.7, 
+             bin = "30 mins", 
+             time_increment = "time_m", 
+             mouse_id = "M3OXY", 
+             results_dir = here("results/best_data/3.18"))
+
+#M4
+quick_smooth(file = here("data/3-2022/3-18-2022/M4_OXY.CSV"), 
+             slope = 11779, 
+             filt_val = 30, 
+             span = 0.7, 
+             bin = "30 mins", 
+             time_increment = "time_m", 
+             mouse_id = "M4_OXY", 
+             results_dir = here("results/best_data/3.18"))
+
+#M6
+quick_smooth(file = here("data/3-2022/3-18-2022/M6_OXY.CSV"), 
+             slope = 14528, 
+             filt_val = 30, 
+             span = 0.7, 
+             bin = "30 mins", 
+             time_increment = "time_m", 
+             mouse_id = "M6_OXY", 
+             results_dir = here("results/best_data/3.18"))
+
+#M9
+quick_smooth(file = here("data/3-2022/3-18-2022/M9BUP.CSV"), 
+             slope = 13040, 
+             filt_val = 35, 
+             span = 0.7, 
+             bin = "30 mins", 
+             time_increment = "time_m", 
+             mouse_id = "M9BUP", 
+             results_dir = here("results/best_data/3.18"))
+
+#M12
+quick_smooth(file = here("data/3-2022/3-18-2022/M12BUP.CSV"), 
+             slope = 12402, 
+             filt_val = 15, 
+             span = 0.7, 
+             bin = "30 mins", 
+             time_increment = "time_m", 
+             mouse_id = "M12BUP", 
+             results_dir = here("results/best_data/3.18"))
+
+#M13
+quick_smooth(file = here("data/3-2022/3-18-2022/M13VEH.CSV"), 
+             slope = 13555, 
+             filt_val = 30, 
+             span = 0.7, 
+             bin = "30 mins", 
+             time_increment = "time_m", 
+             mouse_id = "M13VEH", 
+             results_dir = here("results/best_data/3.18"))
+
+#M14
+quick_smooth(file = here("data/3-2022/3-18-2022/M14VEH.CSV"), 
+             slope = 12491, 
+             filt_val = 30, 
+             span = 0.7, 
+             bin = "30 mins", 
+             time_increment = "time_m", 
+             mouse_id = "M14VEH", 
+             results_dir = here("results/best_data/3.18"))
+
+#M18
+quick_smooth(file = here("data/3-2022/3-18-2022/M18VEH.CSV"), 
+             slope = 10674, 
+             filt_val = 30, 
+             span = 0.7, 
+             bin = "30 mins", 
+             time_increment = "time_m", 
+             mouse_id = "M18VEH", 
+             results_dir = here("results/best_data/3.18"))
+
+```
+
+Getting tables ready for the iteration bits
+
+```{r}
+file_names <- list.files(here("data/filt_vals"), full.names = TRUE)
+filt_data <- map(file_names, read_xlsx) %>% 
+  map(mutate, date = as.character(date)) %>% 
+  map(separate, col = date, into = c("y", "m", "d")) %>% 
+  map(mutate, m = str_sub(m, 2, 2), d = if_else(str_sub(d, 1, 1) == 0, str_sub(d, 2, 2), d)) %>% 
+  map(select, mouse_id, filt_vals, m, d, y) %>% 
+  map(mutate, date = str_c(m, d, y, sep = "-")) %>% 
+  map(select, mouse_id, filt_vals, date)
+  
+
+march_filt_data <- filt_data[1:2]
+april_filt_data <- filt_data[3:7]
+may_filt_data <- filt_data[8:10]
+
+get_file_dirs <- function(data, dir, calib) {
+  
+  
+  file_tib <- tibble(file = list.files(paste(dir, data$date[1], sep = "/"), full.names = TRUE),
+                     mouse_id = str_remove(list.files(paste(dir, data$date[1], sep = "/")), ".CSV"))
+  
+  comb <- data %>%
+    inner_join(file_tib, by = "mouse_id") %>%
+    inner_join(calib, by = "mouse_id") %>% 
+    select(file, slope, filt_vals, mouse_id, date)
+  
+  return(comb)
+  
+}
+
+
+full_march <- map(march_filt_data, get_file_dirs, dir = here("data/3-2022"), calib = calibration_vals)
+full_april <- map(april_filt_data, get_file_dirs, dir = here("data/4-2022"), calib = calibration_vals)
+full_may <- map(may_filt_data, get_file_dirs, dir = here("data/5-2022"), calib = calibration_vals)
+
+```
+
+```{r}
+mapper <- function(data) {
+  
+  df_list <- list(file = data$file,
+                  slope = data$slope,
+                  filt_vals = data$filt_vals,
+                  mouse_id = data$mouse_id,
+                  date = data$date)
+  
+  pmap(df_list, 
+       quick_smooth,
+       span = 0.7,
+       bin = "30 mins",
+       time_increment = "time_m",
+       results_dir = here("results/best_data"))
+  
+}
+
+map(full_march, mapper)
+map(full_april, mapper)
+map(full_may, mapper)
+
+pmap(as.list(full_march[[1]]), 
+       quick_smooth,
+       bin = "30 mins",
+       time_increment = "time_m",
+       results_dir = here("results/best_data"))
+
+quick_smooth(file = here("data/3-2022/3-18-2022/M18VEH.CSV"), 
+             slope = 10674, 
+             filt_val = 30, 
+             span = 0.7, 
+             bin = "30 mins", 
+             time_increment = "time_m", 
+             mouse_id = "M18VEH", 
+             results_dir = here("results/best_data/3.18"))
+
+april_filt_data
+
+quick_smooth(file = here("data/4-2022/4-1-2022/M11BUP.CSV"), slope = 12402, filt_vals = 11, mouse_id = "M12BUP", date = "4-1-2022", span = 0.70, bin = "30 mins", time_increment = "time_m", results_dir = here("results/best_data"))
+
+```
+
